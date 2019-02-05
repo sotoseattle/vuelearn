@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.1/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.2/css/bulma.css">
+	<title>Document</title>
+</head>
+<body>
+	<div id="app">
+		<div class="block">
+			{{ shirtCost }}	
+		</div>
+		
+		<div class="block">
+			{{ hatCost }}	
+		</div>
+		
+	</div>
+
+	<script src="https://unpkg.com/vue"></script>
+	<script>
+		var app = new Vue({
+			el: "#app",
+			data: { 
+				shirtPrice: 25,
+				hatPrice: 10,
+				currency: '$',
+				salesTax: 16
+			},
+			computed: {
+				shirtCost() { return this.calculateSalesTax(this.shirtPrice) },
+				hatCost()   { return this.calculateSalesTax(this.hatPrice) }
+			},
+			methods: {
+				costWithTax(p) { return (p * (1 + this.salesTax/100.0)) },
+				formatCurrency(n) { return (this.currency + n) },
+				calculateSalesTax(p) {
+					return 'This item costs '	+ 
+					this.formatCurrency(this.costWithTax(p)) +
+					 ' (' + this.formatCurrency(p) + ' without sales tax) '
+				}
+			}
+		})
+	</script>
+	
+</body>
+</html>
