@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.1/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.2/css/bulma.css">
+	<title>Dropbox App</title>
+</head>
+
+<body>
+	<div id="app">
+		<dropbox-viewer></dropbox-viewer>
+	</div>
+
+	<script type="text/x-template" id='dropbox-viewer-template'>
+		<div class="container">
+			<div class="h1">Dropbox</div>
+			<transition name='fade'>
+				<div v-if="isLoading">Loading...</div>
+			</transition>
+			<transition name='fade'>
+			<ul v-if="!isLoading">
+				<li v-for="f in structure">
+					<strong>{{ f.name }}</strong>
+					<span v-if="f.size">{{ formatFileSize(f.size) }} bytes. </span>
+					<span v-if="f.media_info">
+						Meta: 
+						{{f.media_info.metadata}}
+					</span>
+				</li>
+			</ul>
+			</transition>
+		</div>
+	</script>
+
+	<script src="js/dropbox.js"></script>
+	<script src="js/vue.js"></script>
+	<script src='js/config.js'></script>
+	<script src="js/app.js"></script>
+	<style>
+		.fade-enter-active,
+      		.fade-leave-active {
+		    	transition: opacity .5s
+		    }
+		    .fade-enter, 
+		    .fade-leave-to {
+		    	opacity: 0
+      		}
+	</style>
+</body>
+
+	
+</html>
