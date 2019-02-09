@@ -10,27 +10,34 @@
 </head>
 <body>
 	<div id="app" class="block">
+		<filtering :filter="filter" v-on:change-filter-field="changeFilter" v-on:change-filter-query="changeQuery"></filtering>
 		<table class="table">
-			<tr v-for="person in people" v-show="filterRow(person)">
-				<td>{{ person.name }}</td>
-				<td>
-					<a :href="'mailto:' + person.email" >{{ person.email }}</a>
-				</td>
-				<td :class="balanceClass(person)">{{ format(person, 'balance') }}</td>
-				<td>{{ person.registered }}</td>
-				<td :class="activeClass(person)">{{ format(person, 'isActive') }}</td>
-				<td>{{ format(person, 'registered') }}</td>
-				
-				
-			</tr>
+			<template v-for="individual in people">
+				<team-member v-bind:person="individual" :filter="filter"></team-member>
+			</template>
 		</table>
+	</div>
+
+	<script type="text/x-template" id="team-member-template">
+		<tr v-show="filterRow()">
+			<td>{{ person.name }}</td>
+			<td>
+				<a :href="'mailto:' + person.email" >{{ person.email }}</a>
+			</td>
+			<td :class='balanceClass'>{{ balanceAmount }}</td>
+			<td :class="activeClass">{{ status }}</td>
+			<td>{{ dateRegistered }}</td>
+		</tr>
+	</script>
+
+	<script type="text/x-template" id="filtering-template">
 		<form>
-			<label for="filter.field" class="label">
+			<label for="filterField" class="label">
 				Field:
 				<!--<select id="filter.field" v-model="filter.field" class="select">-->
-				<select id="filter.field" v-on:change="changeFilter($event)" class=".select">
+				<select id="filterField" v-on:change="changeFilterField($event)" class=".select">
 					<option value="">Disable Options</option>
-					<option value="isActive" value="true">Active User</option>
+					<option value="isActive">Active User</option>
 					<option value="name">Name</option>
 					<option value="email">Email</option>
 					<option value="balance">Balance</option>
@@ -38,27 +45,117 @@
 				</select>
 			</label>
 
-			<label for="filter.query" v-show="this.filter.field && !isActiveFilterSelected()" class="label">
+			<label for="filterQuery" v-show="this.filter.field && !isActiveFilterSelected()" class="label">
 				Query:
-				<input type="text" id="filter.query" v-model="filter.query" class="input">
+				<input type="text" id="filterQuery" v-model="filter.query" class="input">
 			</label>
-			<dic v-show="isActiveFilterSelected()">
+			<span v-show="isActiveFilterSelected()">
 				Active: 
 				<label for="userStateActive" class="label">
 					Yes:
-					<input type="radio" value="true" id="userStateActive" :value="true" v-model="filter.query" class="radio">
+					<input type="radio" :value="true" id="userStateActive" v-model="filter.query" class="radio">
 				</label>
 				<label for="userStateInactive" class="label">
 					No:
-					<input type="radio" value="false" id="userStateInactive" :value="false" v-model="filter.query" class="radio">
+					<input type="radio" id="userStateInactive" :value="false" v-model="filter.query" class="radio">
 				</label>
-			</dic>
+			</span>
 		</form>
-
-	</div>
+	</script>
 
 	<script src="https://cdn.jsdelivr.net/npm/vue"></script>
 	<script>
+		Vue.component('team-member', {
+			template: '#team-member-template',
+			data() {
+				return {
+					currency: '$'				};
+			},
+			props: {
+				person: Object,
+				filter: Object
+			},
+			computed: {
+				/* CSS Classes */
+				activeClass() {
+					return (this.person.isActive ? 'is-active' : 'is-inactive');
+				},
+				balanceClass() {
+					let balanceLevel = 'is-success';
+					if (this.person.balance < 2000.0) {
+						balanceLevel = 'is-error';
+					} else if (this.person.balance < 3000.0) {
+						balanceLevel = 'is-warning';
+					}
+
+					let increasing = false;
+					let bal = this.person.balance / 1000.0;
+					if (Math.round(bal) == Math.ceil(bal)) {
+						increasing = 'increasing'
+					}
+					return [balanceLevel, increasing]
+				},
+				balanceAmount() {
+					return this.currency + this.person.balance.toFixed(2);
+				},
+				dateRegistered() {
+					date = new Date(this.person.registered);
+					return date.toLocaleString('en-US');
+				},
+				status() {
+					return (this.person.isActive ? 'Active' : 'Inactive');
+				}
+			},
+			methods: {
+				filterRow() {
+					let visible = true;
+					let field = this.filter.field;
+					let query = this.filter.query;
+					if (field) {
+						if (this.filter.field === 'isActive') {
+							visible = (typeof query === 'boolean') ? (this.person.isActive === query) : true;
+						} else {
+							query = String(query);
+							field = this.person[field];
+							if (typeof field === 'number') {
+								try {
+									visible = eval(field + query);
+								} catch(error) {}
+							} else {
+								visible = field.includes(query.toLowerCase());
+							}							
+						}
+					} 
+					return visible;
+				}
+			}
+		});
+
+		Vue.component('filtering', {
+			template: '#filtering-template',
+			data() {
+				return {
+				}
+			},
+			props: {
+				filter: Object
+			},
+			methods: {
+				isActiveFilterSelected(){
+					return (this.filter.field === 'isActive');
+				},
+				changeFilterField(event) {
+					this.$emit('change-filter-field', event.target.value);
+				}
+			},
+			watch: {
+				'filter.query': function() {
+					this.$emit('change-filter-query', this.filter.query)
+				}
+			}
+		});
+			
+
 		const app = new Vue({
 			el: "#app",
 			data: {
@@ -66,7 +163,6 @@
 					field: "",
 					query: "",
 				},
-				currency: "$",
 				people: [
 				  {
 				    "index": 0,
@@ -116,81 +212,15 @@
 				]
 			},
 			methods: {
-				isActiveFilterSelected(){
-					return (this.filter.field === 'isActive');
-				},
-				/**
-				* CSS Classes
-				**/
-				activeClass(person) {
-					return (person.isActive ? 'is-active' : 'is-inactive');
-				},
-				balanceClass(person) {
-					let balanceLevel = 'is-success';
-					let balance = person.balance / 1000.0;
-					let increasing = false;
-
-					if (person.balance < 2000.0) {
-						balanceLevel = 'is-error';
-					} else if (person.balance < 3000.0) {
-						balanceLevel = 'is-warning';
-					}
-
-					if (Math.round(balance) == Math.ceil(balance)) {
-						increasing = 'increasing'
-					}
-					return [increasing, balanceLevel]
-				},
-				/**
-				* Display
-				**/
-				format(person, key) {
-					let field = person[key];
-					let output = field.toString().trim();
-
-					switch(key) {
-						case 'balance':
-							output = this.currency + field.toFixed(2);
-							break;
-						case 'registered':
-							tmp = new Date(field);
-							output = tmp.toLocaleString('en-US');
-							break;
-						case 'isActive':
-							output = (field ? 'Active' : 'Inactive');
-							break
-					}
-					return output
-				},
-				/**
-				* Filtering
-				**/
-				changeFilter(event) {
+				changeFilter(field) {
 					this.filter.query = '';
-					this.filter.field = event.target.value;
+					this.filter.field = field;
 				},
-				filterRow(person) {
-					let result = true;
-					let field = this.filter.field;
-					let query = this.filter.query;
-					if (field) {
-						if (this.isActiveFilterSelected()) {
-							result = (typeof query === 'boolean') ? (person.isActive === query) : true;
-						} else {
-							if (typeof field === 'number') {
-								try {
-									result = eval(field + query);
-								} catch(error) {}
-							} else {
-								result = field.toLowerCase().includes(query.toLowerCase());
-							}							
-						}
-					} 
-					return result;
-				},
+				changeQuery(query) {
+					this.filter.query = query;
+				}
 			}
 		})
-
 	</script>
 </body>
 </html>
