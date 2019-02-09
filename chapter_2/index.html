@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+
+	<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.1/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.2/css/bulma.css">
+
+	<title>Document</title>
+</head>
+<body>
+	<div id="app" class="block">
+		<table class="table">
+			<tr v-for="person in people" v-show="filterRow(person)">
+				<td>{{ person.name }}</td>
+				<td>
+					<a :href="'mailto:' + person.email" >{{ person.email }}</a>
+				</td>
+				<td :class="balanceClass(person)">{{ format(person, 'balance') }}</td>
+				<td>{{ person.registered }}</td>
+				<td :class="activeClass(person)">{{ format(person, 'isActive') }}</td>
+				<td>{{ format(person, 'registered') }}</td>
+				
+				
+			</tr>
+		</table>
+		<form>
+			<label for="filter.field" class="label">
+				Field:
+				<!--<select id="filter.field" v-model="filter.field" class="select">-->
+				<select id="filter.field" v-on:change="changeFilter($event)" class=".select">
+					<option value="">Disable Options</option>
+					<option value="isActive" value="true">Active User</option>
+					<option value="name">Name</option>
+					<option value="email">Email</option>
+					<option value="balance">Balance</option>
+					<option value="isRegistered">Registered Date</option>
+				</select>
+			</label>
+
+			<label for="filter.query" v-show="this.filter.field && !isActiveFilterSelected()" class="label">
+				Query:
+				<input type="text" id="filter.query" v-model="filter.query" class="input">
+			</label>
+			<dic v-show="isActiveFilterSelected()">
+				Active: 
+				<label for="userStateActive" class="label">
+					Yes:
+					<input type="radio" value="true" id="userStateActive" :value="true" v-model="filter.query" class="radio">
+				</label>
+				<label for="userStateInactive" class="label">
+					No:
+					<input type="radio" value="false" id="userStateInactive" :value="false" v-model="filter.query" class="radio">
+				</label>
+			</dic>
+		</form>
+
+	</div>
+
+	<script src="https://cdn.jsdelivr.net/npm/vue"></script>
+	<script>
+		const app = new Vue({
+			el: "#app",
+			data: {
+				filter: {
+					field: "",
+					query: "",
+				},
+				currency: "$",
+				people: [
+				  {
+				    "index": 0,
+				    "guid": "83cf65d1-c6eb-4b0f-9433-72368f8af286",
+				    "isActive": true,
+				    "balance": 3891.79,
+				    "name": "Haley Hudson",
+				    "email": "haleyhudson@rooforia.com",
+				    "registered": "2018-07-30T11:37:27"
+				  },
+				  {
+				    "index": 1,
+				    "guid": "252acdd9-49d4-4455-a149-46238f09a7d6",
+				    "isActive": true,
+				    "balance": 2374.25,
+				    "name": "Rutledge Adkins",
+				    "email": "rutledgeadkins@rooforia.com",
+				    "registered": "2018-01-28T07:02:51"
+				  },
+				  {
+				    "index": 2,
+				    "guid": "350ccc8d-1900-49ac-aed0-3bd7d0b8ff75",
+				    "isActive": false,
+				    "balance": 2540.34,
+				    "name": "Shields Odonnell",
+				    "email": "shieldsodonnell@rooforia.com",
+				    "registered": "2018-06-16T06:43:22"
+				  },
+				  {
+				    "index": 3,
+				    "guid": "f524f294-ba67-4b89-897b-212abc7c84b8",
+				    "isActive": false,
+				    "balance": 2588.39,
+				    "name": "Richards Farrell",
+				    "email": "richardsfarrell@rooforia.com",
+				    "registered": "2014-09-18T05:03:21"
+				  },
+				  {
+				    "index": 4,
+				    "guid": "6c208316-4bac-4d71-aac4-4980ca5caf87",
+				    "isActive": true,
+				    "balance": 2587.77,
+				    "name": "Page Koch",
+				    "email": "pagekoch@rooforia.com",
+				    "registered": "2018-02-22T02:03:05"
+				  }
+				]
+			},
+			methods: {
+				isActiveFilterSelected(){
+					return (this.filter.field === 'isActive');
+				},
+				/**
+				* CSS Classes
+				**/
+				activeClass(person) {
+					return (person.isActive ? 'is-active' : 'is-inactive');
+				},
+				balanceClass(person) {
+					let balanceLevel = 'is-success';
+					let balance = person.balance / 1000.0;
+					let increasing = false;
+
+					if (person.balance < 2000.0) {
+						balanceLevel = 'is-error';
+					} else if (person.balance < 3000.0) {
+						balanceLevel = 'is-warning';
+					}
+
+					if (Math.round(balance) == Math.ceil(balance)) {
+						increasing = 'increasing'
+					}
+					return [increasing, balanceLevel]
+				},
+				/**
+				* Display
+				**/
+				format(person, key) {
+					let field = person[key];
+					let output = field.toString().trim();
+
+					switch(key) {
+						case 'balance':
+							output = this.currency + field.toFixed(2);
+							break;
+						case 'registered':
+							tmp = new Date(field);
+							output = tmp.toLocaleString('en-US');
+							break;
+						case 'isActive':
+							output = (field ? 'Active' : 'Inactive');
+							break
+					}
+					return output
+				},
+				/**
+				* Filtering
+				**/
+				changeFilter(event) {
+					this.filter.query = '';
+					this.filter.field = event.target.value;
+				},
+				filterRow(person) {
+					let result = true;
+					let field = this.filter.field;
+					let query = this.filter.query;
+					if (field) {
+						if (this.isActiveFilterSelected()) {
+							result = (typeof query === 'boolean') ? (person.isActive === query) : true;
+						} else {
+							if (typeof field === 'number') {
+								try {
+									result = eval(field + query);
+								} catch(error) {}
+							} else {
+								result = field.toLowerCase().includes(query.toLowerCase());
+							}							
+						}
+					} 
+					return result;
+				},
+			}
+		})
+
+	</script>
+</body>
+</html>
