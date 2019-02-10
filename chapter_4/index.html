@@ -8,27 +8,43 @@
 
 <body>
 	<div id="app">
+		<h1 class="title is-1">Dropbox</h1>
 		<dropbox-viewer></dropbox-viewer>
 	</div>
 
+	
+	<script type="text/x-template" id='breadcrumb-template'>
+		<div class="container">
+			<span v-for="x in throwCrumbs">
+				» <a @click.prevent="navigate(x.path)" :href=x.path>{{x.name}}</a>
+			</span>
+			<hr/>
+		</div>
+	</script>
+
 	<script type="text/x-template" id='dropbox-viewer-template'>
 		<div class="container">
-			<div class="h1">Dropbox</div>
-			<transition name='fade'>
-				<div v-if="isLoading">Loading...</div>
-			</transition>
-			<transition name='fade'>
-			<ul v-if="!isLoading">
-				<li v-for="f in structure">
-					<strong>{{ f.name }}</strong>
-					<span v-if="f.size">{{ formatFileSize(f.size) }} bytes. </span>
-					<span v-if="f.media_info">
-						Meta: 
-						{{f.media_info.metadata}}
-					</span>
-				</li>
-			</ul>
-			</transition>
+			<breadcrumb :breadcrumbs="pathWalked" @path="updateStructure"></breadcrumb>
+
+
+			<div v-if="isLoading">
+				<transition name='fade'>
+					<div>Loading...</div>
+				</transition>
+			</div>
+			<div v-else>
+				<div v-for="entry in structure.folders">
+					<!-- ATTENTION @path -->
+					<folder :f="entry" @path="updateStructure"></folder>
+				</div>
+				<hr/>
+				<ul>
+					<li v-for="entry in structure.files">
+						<file :f="entry"></file>
+					</li>
+				</ul>
+			</div>
+			
 		</div>
 	</script>
 

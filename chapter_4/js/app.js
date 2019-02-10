@@ -1,12 +1,67 @@
+Vue.component('breadcrumb', {
+	template: '#breadcrumb-template',
+	props: {
+		breadcrumbs: String
+	},
+	computed: {
+		throwCrumbs() {
+			let out = [];
+			let str = '';
+			for (let x of this.breadcrumbs.split('/')) {
+				str += x;
+				out.push({name: x || 'home', path: str});
+				str += '/';
+			}
+			return out;
+		}
+	},
+	methods: {
+		navigate(path) {
+			this.$emit('path', path);
+		}
+	}
+});
+
+Vue.component('folder', {
+	template: "<span class='button is-info is-outlined' @click='navigate()'>{{ f.name }}</span>",
+	props: {
+		f: Object
+	},
+	methods: {
+		navigate() {
+			this.$emit('path', this.f.path_lower);
+		}
+	}
+});
+
+Vue.component('file', {
+	template: "<div><strong>{{ f.name }}</strong> <span>[{{ formatFileSize(f.size) }}]</span></div>",
+					//'<span v-show="f.media_info">Meta: {{f.media_info.metadata}}</span>',
+	data() {
+		return {
+			byteSizes: ['bytes', 'KB', 'MB', 'GB', 'TB']
+		}
+	},
+	props: {
+		f: Object
+	},
+	methods: {
+		formatFileSize(bytes) {
+			let i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
+			let n = Math.round(bytes / Math.pow(1024, i), 2)
+			return n + ' ' + this.byteSizes[i];
+		}
+	}
+});
 
 Vue.component('dropbox-viewer', {
 	template: '#dropbox-viewer-template',
 	data() {
 		return {
 			accessToken: config.token,
-			structure: [],
-			byteSizes: ['Bytes', 'KB', 'MB', 'GB', 'TB'],
-			isLoading: true
+			structure: {},
+			isLoading: true,
+			pathWalked: ''
 		}
 	},
 	methods: {
@@ -21,30 +76,36 @@ Vue.component('dropbox-viewer', {
 				include_media_info: true
 			})
 			.then(response => {
-				console.log(response.entries);
-				this.structure = response.entries;
+				this.pathWalked = path;
+				const structure = {
+					files: [],
+					folders: []
+				};
+				for (let entry of response.entries) {
+					if (entry['.tag']==='folder') {
+						structure.folders.push(entry);
+					} else {
+						structure.files.push(entry);
+					}
+				}
+				this.structure = structure;
 				this.isLoading = false;
 			})
 			.catch(error => {
 				console.log(error);
 			})
 		},
-		formatFileSize(bytes) {
-			let i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
-			let n = Math.round(bytes / Math.pow(1024, i), 2)
-			return n + ' ' + this.byteSizes[i];
+		updateStructure(path) {
+			this.isLoading = true;
+			this.getFolderStructure(path);
 		}
 	},
 	created() {
-		this.getFolderStructure('/Photos/astronomy');
+		this.getFolderStructure('');
 	}
 });
 
 new Vue({
 	el: '#app'
 });
-
-
-
-
 
