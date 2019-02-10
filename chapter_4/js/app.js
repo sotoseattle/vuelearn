@@ -1,5 +1,12 @@
 Vue.component("breadcrumb", {
-  template: "#breadcrumb-template",
+  template: `
+  <div class="container">
+    <span v-for="x in throwCrumbs">
+    > <a :href="x.path">{{x.name || 'Home'}}</a>
+    </span>
+    <hr>
+  </div>
+  `,
   props: {
     breadcrumbs: String
   },
@@ -10,30 +17,24 @@ Vue.component("breadcrumb", {
       for (let x of this.breadcrumbs.split("/")) {
         str += x;
         out.push({
-          name: x || "home",
-          path: str
+          name: x || 'home',
+          path: '#' + str
         });
         str += "/";
       }
       return out;
     }
-  },
-  methods: {
-    navigate(path) {
-      this.$emit("path", path);
-    }
   }
 });
 
 Vue.component("folder", {
-  template: "<span class='button is-info is-outlined' @click='navigate()'>{{ f.name }}</span>",
+  template: `
+  <a :href="\'#\' + f.path_lower" class='button'>
+    {{ f.name }}
+  </a>
+  `,
   props: {
     f: Object
-  },
-  methods: {
-    navigate() {
-      this.$emit("path", this.f.path_lower);
-    }
   }
 });
 
@@ -81,6 +82,9 @@ Vue.component("dropbox-viewer", {
       pathWalked: ""
     };
   },
+  props: {
+    p: String
+  },
   methods: {
     dropbox() {
       return new Dropbox.Dropbox({
@@ -122,12 +126,31 @@ Vue.component("dropbox-viewer", {
     }
   },
   created() {
-    let hash = window.location.hash.substring(1);
-    console.log(hash)
-    this.getFolderStructure(hash || '');
+    this.getFolderStructure(this.path);
+  },
+  watch: {
+    p() {
+      this.updateStructure(this.p);
+    }
   }
 });
 
-new Vue({
-  el: "#app"
+const app = new Vue({
+  el: "#app",
+  data: {
+    path: ''
+  },
+  methods: {
+    updateHash() {
+      let hash = window.location.hash.substring(1);
+      this.path = (hash || '');
+    }
+  },
+  created() {
+    this.updateHash();
+  }
 });
+
+window.onhashchange = () => {
+  app.updateHash();
+}

@@ -11,22 +11,12 @@
 <body>
 	<div id="app">
 		<h1 class="title is-1">Dropbox</h1>
-		<dropbox-viewer></dropbox-viewer>
+		<dropbox-viewer :p="path"></dropbox-viewer>
 	</div>
-
-	<template id='breadcrumb-template'>
-		<div class="container">
-			<span v-for="x in throwCrumbs">
-				»
-				<a @click.prevent="navigate(x.path)" :href="x.path">{{x.name}}</a>
-			</span>
-			<hr>
-		</div>
-	</template>
 
 	<script type="text/x-template" id='dropbox-viewer-template'>
 		<div class="container">
-			<breadcrumb :breadcrumbs="pathWalked" @path="updateStructure"></breadcrumb>
+			<breadcrumb :breadcrumbs="pathWalked"></breadcrumb>
 			<transition name='fade'>
 				<div v-if="isLoading">
 					<div v-if="isLoading === 'error'">
@@ -40,7 +30,7 @@
 				<div v-else>
 					<div class="buttons">
 						<div v-for="entry in structure.folders">
-							<folder :f="entry" @path="updateStructure"></folder>
+							<folder :f="entry"></folder>
 						</div>
 						<hr/>
 						<ul>
