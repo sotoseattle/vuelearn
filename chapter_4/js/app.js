@@ -88,6 +88,8 @@ Vue.component("dropbox-viewer", {
       });
     },
     getFolderStructure(path) {
+      console.log(path);
+      window.location.hash = path;
       this.dropbox()
         .filesListFolder({
           path: path,
@@ -110,6 +112,7 @@ Vue.component("dropbox-viewer", {
           this.isLoading = false;
         })
         .catch(error => {
+          this.isLoading = 'error';
           console.log(error);
         });
     },
@@ -119,7 +122,9 @@ Vue.component("dropbox-viewer", {
     }
   },
   created() {
-    this.getFolderStructure("");
+    let hash = window.location.hash.substring(1);
+    console.log(hash)
+    this.getFolderStructure(hash || '');
   }
 });
 
